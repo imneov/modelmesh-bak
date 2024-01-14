@@ -25,14 +25,16 @@ import "mindspore_serving/proto/ms_service.proto";
 
 
 service MFService {
-  rpc Predict(PredictRequest) returns (PredictReply) {}
+  rpc Predict(stream PredictRequest) returns (stream PredictReply) {}
 }
 
 
 message PredictRequest {
-  mindspore.serving.proto.PredictRequest mindspore = 1; // mindspore serving
+  string id = 1;
+  mindspore.serving.proto.PredictRequest mindspore = 2; // mindspore serving
 }
 
 message PredictReply {
-  mindspore.serving.proto.PredictReply mindspore = 1; // mindspore serving
+  string id = 1;
+  mindspore.serving.proto.PredictReply mindspore = 2; // mindspore serving
 }

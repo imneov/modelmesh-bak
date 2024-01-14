@@ -3,14 +3,13 @@ package main
 import (
 	"context"
 	"flag"
+	service "github.com/imneov/modelmesh/internal/service"
 	mindspore_serving_proto "github.com/imneov/modelmesh/mindspore_serving/proto"
 	"github.com/imneov/modelmesh/pkg/transport/grpc"
-	"k8s.io/klog/v2"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/imneov/modelmesh/pkg/service"
 	"github.com/tkeel-io/kit/app"
 	"github.com/tkeel-io/kit/log"
 	"github.com/tkeel-io/kit/transport"

@@ -17,15 +17,17 @@
 package grpc
 
 import (
+	"context"
 	grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
+	"github.com/imneov/modelmesh/internal/broker/config"
+	proto "github.com/imneov/modelmesh/mindspore_serving/proto"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/resolver"
 	"k8s.io/klog/v2"
 	"time"
 )
 
 var opts = []grpc.DialOption{
-	grpc.WithBalancerName("round_robin"),
+	grpc.WithDefaultServiceConfig(`{"loadBalancingPolicy":"round_robin"}`),
 	grpc.WithInsecure(),
 	grpc.WithUnaryInterceptor(
 		grpc_opentracing.UnaryClientInterceptor(),
@@ -36,67 +38,11 @@ var opts = []grpc.DialOption{
 	grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(64 * 1024 * 1024)),
 }
 
-func NewDiscovery(endpoints ...string) *etcdv3.Discovery {
-	discovery, err0 := etcdv3.New(&registry.Config{
-		Endpoints: endpoints,
-	})
-	if err0 != nil {
-		klog.Error("connect to etcdv3 fail",
-			"endpoint", endpoints,
-			"error", err0)
-		klog.Fatal("connect to etcdv3 fail")
+func NewServingClient(conf *config.GRPCClient) proto.MSServiceClient {
+	ctx, _ := context.WithTimeout(context.Background(), time.Duration(conf.Timeout))
+	conn, err := grpc.DialContext(ctx, conf.Addr, opts...)
+	if err != nil {
+		klog.Errorf("connect fail, endpoint: %s, err %w", "endpoint", conf.Addr, err)
 	}
-
-	return discovery
-}
-
-func NewRuleClient(discovery *etcdv3.Discovery) pb.RuleActionClient {
-	//timeout := time.Duration(config.RPCClient.Timeout)
-	resolverBuilder := discovery.GRPCResolver()
-	resolver.Register(resolverBuilder)
-	conn, err1 := grpc.Dial(
-		resolverBuilder.Scheme()+":///"+metadata.APPID,
-		opts...,
-	)
-	if err1 != nil {
-		klog.Error("connect fail",
-			"endpoint", resolverBuilder.Scheme()+":///"+metadata.APPID,
-			"error", err1)
-		klog.Fatal("connect fail")
-	}
-	return pb.NewRuleActionClient(conn)
-}
-
-func NewJobManagerClient(discovery *etcdv3.Discovery) pb.JobManagerClient {
-	//timeout := time.Duration(config.RPCClient.Timeout)
-	resolverBuilder := discovery.GRPCResolver()
-	resolver.Register(resolverBuilder)
-	conn, err1 := grpc.Dial(
-		resolverBuilder.Scheme()+":///"+metadata.APPID,
-		opts...,
-	)
-	if err1 != nil {
-		klog.Error("connect fail",
-			"endpoint", resolverBuilder.Scheme()+":///"+metadata.APPID,
-			"error", err1)
-		klog.Fatal("connect fail")
-	}
-	return pb.NewJobManagerClient(conn)
-}
-
-func NewRulexNodeActionClient(discovery *etcdv3.Discovery) pb.RulexNodeActionClient {
-	//timeout := time.Duration(config.RPCClient.Timeout)
-	resolverBuilder := discovery.GRPCResolver()
-	resolver.Register(resolverBuilder)
-	conn, err1 := grpc.Dial(
-		resolverBuilder.Scheme()+":///"+rulex.APPID,
-		opts...,
-	)
-	if err1 != nil {
-		klog.Error("connect fail",
-			"endpoint", resolverBuilder.Scheme()+":///"+metadata.APPID,
-			"error", err1)
-		klog.Fatal("connect fail")
-	}
-	return pb.NewRulexNodeActionClient(conn)
+	return proto.NewMSServiceClient(conn)
 }

@@ -20,7 +20,7 @@ import (
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
-	"github.com/imneov/modelmesh/pkg/config"
+	"github.com/imneov/modelmesh/internal/broker/config"
 	"github.com/imneov/modelmesh/pkg/transport/grpc/middleware"
 	"time"
 
@@ -28,7 +28,7 @@ import (
 	"google.golang.org/grpc/keepalive"
 )
 
-func New(c *config.GRPCServer) *grpc.Server {
+func NewServer(c *config.GRPCServer) *grpc.Server {
 	return newServer(c)
 }
 

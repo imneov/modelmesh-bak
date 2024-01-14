@@ -1,5 +1,5 @@
 package constants
 
 var (
-	modelmeshBrokerConfigMapDataKey = "modelmesh-broker-config.yaml"
+	BrokerConfigMapDataKey = "modelmesh-broker-config.yaml"
 )

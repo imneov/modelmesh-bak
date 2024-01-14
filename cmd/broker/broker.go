@@ -17,7 +17,7 @@ limitations under the License.
 package main
 
 import (
-	"github.com/imneov/modelmesh/cmd/apiserver/app"
+	"github.com/imneov/modelmesh/cmd/broker/app"
 	"log"
 )
 

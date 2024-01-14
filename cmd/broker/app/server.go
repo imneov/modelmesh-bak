@@ -19,13 +19,14 @@ package app
 import (
 	"context"
 	"fmt"
-	"k8s.io/klog"
+	"github.com/imneov/modelmesh/cmd/broker/app/options"
+	"github.com/imneov/modelmesh/internal/broker/config"
+	"gopkg.in/yaml.v2"
+	"k8s.io/klog/v2"
 
 	"github.com/spf13/cobra"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	cliflag "k8s.io/component-base/cli/flag"
-	"k8s.io/klog/v2"
-
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
@@ -36,12 +37,13 @@ func NewAPIServerCommand() (cmd *cobra.Command) {
 	conf, err := config.TryLoadFromDisk()
 	if err == nil {
 		s = &options.ServerRunOptions{
-			GenericServerRunOptions: s.GenericServerRunOptions,
-			Config:                  conf,
+			Config: conf,
 		}
 	} else {
 		klog.Fatal("Failed to load configuration from disk", err)
 	}
+	ret, _ := yaml.Marshal(conf)
+	fmt.Println(string(ret))
 
 	cmd = &cobra.Command{
 		Use: "Schedule API Server",
@@ -83,7 +85,7 @@ cluster's shared state through which all other components interact.`,
 }
 
 func Run(s *options.ServerRunOptions, ctx context.Context) error {
-	apiserver, err := s.NewAPIServer(ctx.Done())
+	apiserver, err := s.NewServer(ctx.Done())
 	if err != nil {
 		return err
 	}

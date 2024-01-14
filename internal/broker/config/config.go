@@ -19,7 +19,6 @@ package config
 import (
 	"fmt"
 	"github.com/imneov/modelmesh/pkg/constants"
-	xtime "github.com/imneov/modelmesh/pkg/utils/time"
 	"strings"
 	"sync"
 	"time"
@@ -65,10 +64,12 @@ var (
 
 const (
 	// DefaultConfigurationName is the default name of configuration
-	defaultConfigurationName = "modelmesh"
+	defaultConfigurationName = "modelmesh-broker"
 
 	// DefaultConfigurationPath the default location of the configuration file
-	defaultConfigurationPath = "/etc/modelmesh"
+	defaultConfigurationPath = "/etc/modelmesh/modelmesh-broker"
+
+	defaultBrokerAddr = ":5100"
 )
 
 type config struct {
@@ -110,6 +111,7 @@ func defaultConfig() *config {
 
 	// Load from current working directory, only used for debugging
 	viper.AddConfigPath(".")
+	viper.SetConfigType("yaml")
 
 	// Load from Environment variables
 	viper.SetEnvPrefix("kubesphere")
@@ -126,11 +128,10 @@ func defaultConfig() *config {
 
 // Config defines everything needed for apiserver to deal with external services
 type Config struct {
-	BaseOptions     *BaseConfig
-	GRPCServer      *GRPCServer
-	GRPCClient      *GRPCClient
-	ModelServices   map[string]ModelService
-	VirtualServices map[string]VirtualService
+	BaseOptions   *BaseConfig             `yaml:"base"`
+	BrokerServer  *GRPCServer             `yaml:"brokerServer"`
+	ServiceQueue  ServiceQueue            `yaml:"serviceQueue"`
+	ServiceGroups map[string]ServiceGroup `yaml:"serviceGroups"`
 }
 
 // New config creates a default non-empty Config
@@ -144,19 +145,29 @@ func New() *Config {
 			ProfPathPrefix: "debug",
 			BaseConfig:     "",
 		},
-		GRPCServer: &GRPCServer{
-			Timeout:              xtime.Duration(time.Second),
-			IdleTimeout:          xtime.Duration(time.Second * 60),
-			MaxLifeTime:          xtime.Duration(time.Hour * 2),
-			ForceCloseWait:       xtime.Duration(time.Second * 20),
-			KeepAliveInterval:    xtime.Duration(time.Second * 60),
-			KeepAliveTimeout:     xtime.Duration(time.Second * 20),
+		BrokerServer: &GRPCServer{
+			Addr:                 defaultBrokerAddr,
+			Timeout:              time.Second * 1,
+			IdleTimeout:          time.Second * 60,
+			MaxLifeTime:          time.Hour * 2,
+			ForceCloseWait:       time.Second * 20,
+			KeepAliveInterval:    time.Second * 60,
+			KeepAliveTimeout:     time.Second * 20,
 			MaxMessageSize:       1024 * 1024,
 			MaxConcurrentStreams: 1024,
 		},
-		GRPCClient: &GRPCClient{
-			Dial:    xtime.Duration(time.Second),
-			Timeout: xtime.Duration(time.Second),
+		ServiceQueue: ServiceQueue{
+			ServingClient: &GRPCClient{
+				Addr:    defaultBrokerAddr,
+				Timeout: time.Second * 5,
+			},
+			SchedulingMethod: SP,
+		},
+		ServiceGroups: map[string]ServiceGroup{
+			"default": {
+				Reclaimable: true,
+				Weight:      100,
+			},
 		},
 	}
 }
@@ -175,7 +186,7 @@ func WatchConfigChange() <-chan Config {
 // GetFromConfigMap returns KubeSphere running config by the given ConfigMap.
 func GetFromConfigMap(cm *corev1.ConfigMap) (*Config, error) {
 	c := &Config{}
-	value, ok := cm.Data[constants.modelmeshConfigMapDataKey]
+	value, ok := cm.Data[constants.BrokerConfigMapDataKey]
 	if !ok {
 		return nil, fmt.Errorf("failed to get configmap kubesphere.yaml value")
 	}

@@ -1,0 +1,30 @@
+base:
+  profpathprefix: debug
+  loglevel: info
+  profenable: false
+  tracerenable: false
+  whitelist: []
+  endpoints: []
+  baseconfig: ""
+brokerServer:
+  addr: :5100
+  timeout: 3s
+  idletimeout: 60s
+  maxlifetime: 7200s
+  forceclosewait: 20s
+  keepaliveinterval: 60s
+  keepalivetimeout: 20s
+  maxmessagesize: 1048576
+  maxconcurrentstreams: 1024
+  enableopentracing: false
+serviceQueue:
+  name: ""
+  servingclient:
+    addr: 127.0.0.1:5100
+    timeout: 3s
+  schedulingmethod: SP
+serviceGroups:
+  default:
+    name: ""
+    reclaimable: true
+    weight: 100
