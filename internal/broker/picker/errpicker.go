@@ -5,7 +5,7 @@ import (
 )
 
 // NewErrPicker returns a Picker that always returns err on Pick().
-func NewErrPicker(err error) balancer.Picker {
+func NewErrPicker(err error) Picker {
 	return &errPicker{err: err}
 }
 

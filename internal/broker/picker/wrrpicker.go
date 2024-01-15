@@ -8,13 +8,13 @@ import (
 
 type WRRPickerBuilder struct{}
 
-func (pb *WRRPickerBuilder) Build(info PickerBuildInfo) balancer.Picker {
+func (pb *WRRPickerBuilder) Build(info PickerBuildInfo) Picker {
 	if len(info.ReadySCs) == 0 {
 		return NewErrPicker(balancer.ErrNoSubConnAvailable)
 	}
 
-	scs := []balancer.SubConn{}
-	//scToAddr := make(map[balancer.SubConn]resolver.Address)
+	scs := []PickerKey{}
+	//scToAddr := make(map[PickerKey]resolver.Address)
 	wrr := newWrr()
 	var weight int32
 	//for sc, scInfo := range info.ReadySCs {
@@ -45,9 +45,9 @@ type wrrPicker struct {
 	// subConns is the snapshot of the weightedroundrobin balancer when this picker was
 	// created. The slice is immutable. Each Get() will do a round robin
 	// selection from it and return the selected SubConn.
-	subConns []balancer.SubConn
+	subConns []PickerKey
 
-	//scToAddr map[balancer.SubConn]resolver.Address
+	//scToAddr map[PickerKey]resolver.Address
 
 	mu sync.Mutex
 

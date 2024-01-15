@@ -15,12 +15,12 @@ const recordTimes = 10
 type MrtPickerBuilder struct {
 }
 
-func (pb *MrtPickerBuilder) Build(info PickerBuildInfo) balancer.Picker {
+func (pb *MrtPickerBuilder) Build(info PickerBuildInfo) Picker {
 	if len(info.ReadySCs) == 0 {
 		return NewErrPicker(balancer.ErrNoSubConnAvailable)
 	}
-	scs := []balancer.SubConn{}
-	//scToAddr := make(map[balancer.SubConn]resolver.Address)
+	scs := []PickerKey{}
+	//scToAddr := make(map[PickerKey]resolver.Address)
 	scCostTime := priorityqueue.NewPriorityQueue()
 	scRecords := make([][]int64, len(info.ReadySCs))
 	i := 0
@@ -53,9 +53,9 @@ type mrtPicker struct {
 	// subConns is the snapshot of the roundrobin balancer when this picker was
 	// created. The slice is immutable. Each Get() will do a round robin
 	// selection from it and return the selected SubConn.
-	subConns []balancer.SubConn
+	subConns []PickerKey
 
-	//scToAddr map[balancer.SubConn]resolver.Address
+	//scToAddr map[PickerKey]resolver.Address
 
 	// subConns response cost time
 	scCostTime *priorityqueue.PriorityQueue
