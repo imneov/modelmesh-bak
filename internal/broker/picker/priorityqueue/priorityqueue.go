@@ -5,7 +5,7 @@ import (
 )
 
 type Item struct {
-	Addr       string
+	//Addr       string
 	Val        int64
 	Index      int
 	queueIndex int

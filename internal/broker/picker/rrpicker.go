@@ -5,8 +5,6 @@ import (
 	"sync"
 
 	"google.golang.org/grpc/balancer"
-	"google.golang.org/grpc/balancer/base"
-	"google.golang.org/grpc/resolver"
 )
 
 type RRPickerBuilder struct {
@@ -14,18 +12,19 @@ type RRPickerBuilder struct {
 
 func (pb *RRPickerBuilder) Build(info PickerBuildInfo) balancer.Picker {
 	if len(info.ReadySCs) == 0 {
-		return base.NewErrPicker(balancer.ErrNoSubConnAvailable)
+		return NewErrPicker(balancer.ErrNoSubConnAvailable)
 	}
 	scs := []balancer.SubConn{}
-	scToAddr := make(map[balancer.SubConn]resolver.Address)
-	for sc, scInfo := range info.ReadySCs {
+	//scToAddr := make(map[balancer.SubConn]resolver.Address)
+	//for sc, scInfo := range info.ReadySCs {
+	for sc, _ := range info.ReadySCs {
 		scs = append(scs, sc)
-		scToAddr[sc] = scInfo.Address
+		//scToAddr[sc] = scInfo.Address
 	}
 
 	return &rrPicker{
 		subConns: scs,
-		scToAddr: scToAddr,
+		//scToAddr: scToAddr,
 		// Start at a random index, as the same RR balancer rebuilds a new
 		// picker when SubConn states change, and we don't want to apply excess
 		// load to the first server in the list.
@@ -39,7 +38,7 @@ type rrPicker struct {
 	// selection from it and return the selected SubConn.
 	subConns []balancer.SubConn
 
-	scToAddr map[balancer.SubConn]resolver.Address
+	//scToAddr map[balancer.SubConn]resolver.Address
 
 	mu   sync.Mutex
 	next int

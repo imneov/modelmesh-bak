@@ -1,13 +1,11 @@
 package picker
 
 import (
+	"github.com/imneov/modelmesh/internal/broker/picker/priorityqueue"
 	"math/rand"
 	"sync"
 
-	"github.com/xkeyideal/grpcbalance/grpclient/priorityqueue"
 	"google.golang.org/grpc/balancer"
-	"google.golang.org/grpc/balancer/base"
-	"google.golang.org/grpc/resolver"
 )
 
 type McPickerBuilder struct {
@@ -15,17 +13,18 @@ type McPickerBuilder struct {
 
 func (pb *McPickerBuilder) Build(info PickerBuildInfo) balancer.Picker {
 	if len(info.ReadySCs) == 0 {
-		return base.NewErrPicker(balancer.ErrNoSubConnAvailable)
+		return NewErrPicker(balancer.ErrNoSubConnAvailable)
 	}
 	scs := []balancer.SubConn{}
-	scToAddr := make(map[balancer.SubConn]resolver.Address)
+	//scToAddr := make(map[balancer.SubConn]resolver.Address)
 	scConnectNum := priorityqueue.NewPriorityQueue()
 	i := 0
-	for sc, scInfo := range info.ReadySCs {
+	//for sc, scInfo := range info.ReadySCs {
+	for sc, _ := range info.ReadySCs {
 		scs = append(scs, sc)
-		scToAddr[sc] = scInfo.Address
+		//scToAddr[sc] = scInfo.Address
 		scConnectNum.PushItem(&priorityqueue.Item{
-			Addr:  scInfo.Address.Addr,
+			//Addr:  scInfo.Address.Addr,
 			Val:   0,
 			Index: i,
 		})
@@ -33,8 +32,8 @@ func (pb *McPickerBuilder) Build(info PickerBuildInfo) balancer.Picker {
 	}
 
 	return &mcPicker{
-		subConns:     scs,
-		scToAddr:     scToAddr,
+		subConns: scs,
+		//scToAddr:     scToAddr,
 		scConnectNum: scConnectNum,
 		// Start at a random index, as the same RR balancer rebuilds a new
 		// picker when SubConn states change, and we don't want to apply excess
@@ -49,7 +48,7 @@ type mcPicker struct {
 	// selection from it and return the selected SubConn.
 	subConns []balancer.SubConn
 
-	scToAddr map[balancer.SubConn]resolver.Address
+	//scToAddr map[balancer.SubConn]resolver.Address
 
 	// subConns connect number
 	scConnectNum *priorityqueue.PriorityQueue

@@ -6,10 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/xkeyideal/grpcbalance/grpclient/priorityqueue"
+	"github.com/imneov/modelmesh/internal/broker/picker/priorityqueue"
 	"google.golang.org/grpc/balancer"
-	"google.golang.org/grpc/balancer/base"
-	"google.golang.org/grpc/resolver"
 )
 
 const recordTimes = 10
@@ -19,18 +17,19 @@ type MrtPickerBuilder struct {
 
 func (pb *MrtPickerBuilder) Build(info PickerBuildInfo) balancer.Picker {
 	if len(info.ReadySCs) == 0 {
-		return base.NewErrPicker(balancer.ErrNoSubConnAvailable)
+		return NewErrPicker(balancer.ErrNoSubConnAvailable)
 	}
 	scs := []balancer.SubConn{}
-	scToAddr := make(map[balancer.SubConn]resolver.Address)
+	//scToAddr := make(map[balancer.SubConn]resolver.Address)
 	scCostTime := priorityqueue.NewPriorityQueue()
 	scRecords := make([][]int64, len(info.ReadySCs))
 	i := 0
-	for sc, scInfo := range info.ReadySCs {
+	//for sc, scInfo := range info.ReadySCs {
+	for sc, _ := range info.ReadySCs {
 		scs = append(scs, sc)
-		scToAddr[sc] = scInfo.Address
+		//scToAddr[sc] = scInfo.Address
 		scCostTime.PushItem(&priorityqueue.Item{
-			Addr:  scInfo.Address.Addr,
+			//Addr:  scInfo.Address.Addr,
 			Val:   0,
 			Index: i,
 		})
@@ -39,8 +38,8 @@ func (pb *MrtPickerBuilder) Build(info PickerBuildInfo) balancer.Picker {
 	}
 
 	return &mrtPicker{
-		subConns:   scs,
-		scToAddr:   scToAddr,
+		subConns: scs,
+		//scToAddr:   scToAddr,
 		scCostTime: scCostTime,
 		scRecords:  scRecords,
 		// Start at a random index, as the same RR balancer rebuilds a new
@@ -56,7 +55,7 @@ type mrtPicker struct {
 	// selection from it and return the selected SubConn.
 	subConns []balancer.SubConn
 
-	scToAddr map[balancer.SubConn]resolver.Address
+	//scToAddr map[balancer.SubConn]resolver.Address
 
 	// subConns response cost time
 	scCostTime *priorityqueue.PriorityQueue

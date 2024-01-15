@@ -2,7 +2,6 @@ package picker
 
 import (
 	"google.golang.org/grpc/balancer"
-	"google.golang.org/grpc/resolver"
 )
 
 const WeightAttributeKey = "customize_weight"
@@ -24,5 +23,8 @@ type PickerBuildInfo struct {
 // SubConnInfo contains information about a SubConn created by the base
 // balancer.
 type SubConnInfo struct {
-	Address resolver.Address // the address used to create this SubConn
+	//Address resolver.Address // the address used to create this SubConn
+	Address struct {
+		Weight int32
+	}
 }
