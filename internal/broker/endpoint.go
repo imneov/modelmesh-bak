@@ -61,10 +61,6 @@ func (s *Server) Predict(stream v1.MFService_PredictServer) error {
 			Request: *in,
 			Send:    stream.Send,
 		})
-
-		if err := stream.Send(&v1.PredictReply{}); err != nil {
-			return err
-		}
 	}
 }
 
