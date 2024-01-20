@@ -31,10 +31,10 @@ service MFService {
 
 message PredictRequest {
   string id = 1;
-  mindspore.serving.proto.PredictRequest mindspore = 2; // mindspore serving
+//  mindspore.serving.proto.PredictRequest mindspore = 2; // mindspore serving
 }
 
 message PredictReply {
   string id = 1;
-  mindspore.serving.proto.PredictReply mindspore = 2; // mindspore serving
+//  mindspore.serving.proto.PredictReply mindspore = 2; // mindspore serving
 }

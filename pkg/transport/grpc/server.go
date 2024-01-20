@@ -29,10 +29,6 @@ import (
 )
 
 func NewServer(c *config.GRPCServer) *grpc.Server {
-	return newServer(c)
-}
-
-func newServer(c *config.GRPCServer) *grpc.Server {
 	return grpc.NewServer(serverOption(c)...)
 }
 

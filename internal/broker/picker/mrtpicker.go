@@ -1,13 +1,13 @@
 package picker
 
 import (
+	errs "github.com/imneov/modelmesh/internal/broker/error"
 	"math"
 	"math/rand"
 	"sync"
 	"time"
 
 	"github.com/imneov/modelmesh/internal/broker/picker/priorityqueue"
-	"google.golang.org/grpc/balancer"
 )
 
 const recordTimes = 10
@@ -16,16 +16,16 @@ type MrtPickerBuilder struct {
 }
 
 func (pb *MrtPickerBuilder) Build(info PickerBuildInfo) Picker {
-	if len(info.ReadySCs) == 0 {
-		return NewErrPicker(balancer.ErrNoSubConnAvailable)
+	if len(info.Resources) == 0 {
+		return NewErrPicker(errs.ErrNoSubConnAvailable)
 	}
 	scs := []PickerKey{}
 	//scToAddr := make(map[PickerKey]resolver.Address)
 	scCostTime := priorityqueue.NewPriorityQueue()
-	scRecords := make([][]int64, len(info.ReadySCs))
+	scRecords := make([][]int64, len(info.Resources))
 	i := 0
-	//for sc, scInfo := range info.ReadySCs {
-	for sc, _ := range info.ReadySCs {
+	//for sc, scInfo := range info.Resources {
+	for sc := range info.Resources {
 		scs = append(scs, sc)
 		//scToAddr[sc] = scInfo.Address
 		scCostTime.PushItem(&priorityqueue.Item{
@@ -43,7 +43,7 @@ func (pb *MrtPickerBuilder) Build(info PickerBuildInfo) Picker {
 		scCostTime: scCostTime,
 		scRecords:  scRecords,
 		// Start at a random index, as the same RR balancer rebuilds a new
-		// picker when SubConn states change, and we don't want to apply excess
+		// picker when Resource states change, and we don't want to apply excess
 		// load to the first server in the list.
 		next: rand.Intn(len(scs)),
 	}
@@ -52,7 +52,7 @@ func (pb *MrtPickerBuilder) Build(info PickerBuildInfo) Picker {
 type mrtPicker struct {
 	// subConns is the snapshot of the roundrobin balancer when this picker was
 	// created. The slice is immutable. Each Get() will do a round robin
-	// selection from it and return the selected SubConn.
+	// selection from it and return the selected Resource.
 	subConns []PickerKey
 
 	//scToAddr map[PickerKey]resolver.Address
@@ -67,12 +67,12 @@ type mrtPicker struct {
 	next int
 }
 
-func (p *mrtPicker) Pick(opts balancer.PickInfo) (balancer.PickResult, error) {
+func (p *mrtPicker) Pick(opts PickInfo) (PickResult, error) {
 	p.mu.Lock()
 	n := len(p.subConns)
 	p.mu.Unlock()
 	if n == 0 {
-		return balancer.PickResult{}, balancer.ErrNoSubConnAvailable
+		return PickResult{}, errs.ErrNoSubConnAvailable
 	}
 
 	p.mu.Lock()
@@ -84,8 +84,8 @@ func (p *mrtPicker) Pick(opts balancer.PickInfo) (balancer.PickResult, error) {
 	p.mu.Unlock()
 
 	start := time.Now()
-	done := func(info balancer.DoneInfo) {
-		sub := time.Now().Sub(start).Microseconds()
+	done := func(info DoneInfo) {
+		sub := time.Since(start).Microseconds()
 		if info.Err == nil {
 			p.mu.Lock()
 			p.scRecords[item.Index] = append(p.scRecords[item.Index][1:], sub)
@@ -96,7 +96,7 @@ func (p *mrtPicker) Pick(opts balancer.PickInfo) (balancer.PickResult, error) {
 		//log.Println("mrtpicker done", picked.Addr, p.next, sub)
 	}
 
-	return balancer.PickResult{SubConn: sc, Done: done}, nil
+	return PickResult{Resource: sc, Done: done}, nil
 }
 
 func weightedAverage(vals []int64) int64 {

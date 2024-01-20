@@ -18,7 +18,6 @@ package config
 
 import (
 	"fmt"
-	"github.com/imneov/modelmesh/internal/broker/picker"
 	"github.com/imneov/modelmesh/pkg/constants"
 	"strings"
 	"sync"
@@ -66,10 +65,10 @@ var (
 
 const (
 	// DefaultConfigurationName is the default name of configuration
-	defaultConfigurationName = "model-mesh-broker"
+	defaultConfigurationName = "model-mesh-proxy"
 
 	// DefaultConfigurationPath the default location of the configuration file
-	defaultConfigurationPath = "/etc/model-mesh-broker"
+	defaultConfigurationPath = "/etc/model-mesh-proxy"
 
 	defaultBrokerAddr = ":5100"
 )
@@ -139,7 +138,7 @@ func New() *Config {
 			ProfPathPrefix: "debug",
 			BaseConfig:     "",
 		},
-		BrokerServer: &GRPCServer{
+		ProxyServer: &GRPCServer{
 			Addr:                 defaultBrokerAddr,
 			Timeout:              time.Second * 1,
 			IdleTimeout:          time.Second * 60,
@@ -150,12 +149,6 @@ func New() *Config {
 			MaxMessageSize:       1024 * 1024,
 			MaxConcurrentStreams: 1024,
 		},
-		Schedule: &Schedule{
-			Method: picker.RR,
-		},
-		Queue: &Queue{
-			Size: 10,
-		},
 		Dispatch: &Dispatch{
 			Client: &GRPCClient{
 				Addr:    defaultBrokerAddr,
@@ -163,18 +156,6 @@ func New() *Config {
 			},
 			Queue: &Queue{
 				Size: 10,
-			},
-		},
-		ServiceGroups: []*ServiceGroup{
-			{
-				Name:        "default",
-				Reclaimable: true,
-				Weight:      100,
-			},
-			{
-				Name:        "default1",
-				Reclaimable: true,
-				Weight:      100,
 			},
 		},
 	}

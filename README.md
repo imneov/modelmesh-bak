@@ -1,52 +1,61 @@
-# Model Mesh
+---
+sidebar_position: 1
+---
 
-<img src="static/logo.png" alt="Model Mesh Arch" width="500" length="500"/>
+# 简介
 
-Model Mesh is a framework specification for AI model governance in the era of cloud-native AI development. With a focus on abstraction and standardization of multiple AI model governance actions, Model Mesh aims to provide developers with a transparent and streamlined experience in accessing AI models. It supports a consistent governance interface and facilitates various automation tasks, thereby advancing the transition from Infrastructure as Code to Infrastructure Governance as Code within the AI domain.
+`Edgewize ModelMesh` 是一款支持多模型服务的推理服务治理框架。`Edgewize ModelMesh` 通过提供多模型共享、流量治理、审计、安全和扩展性等能力。
 
-## Introduction
+## 概述
 
-In the landscape of rapidly evolving AI technologies, the proliferation of AI models across various applications creates intricate dependencies resembling vast interconnected networks. Managing these dependencies presents significant challenges. Different AI-based services demand distinct models, necessitating an efficient approach to manage and govern these models. While Kubernetes simplifies application deployment at scale, and Service Mesh offers solutions for microservice governance in cloud-native architectures, there's currently a lack of a similar solution for AI models.
+`Edgewize ModelMesh` 关注如下几个问题:
 
-Model Mesh is proposed as a governance framework tailored to oversee AI models in cloud-native environments. It adheres to the following core principles:
-* First-Class Model Resource: All actions derive from the governance of AI models.
-* Developer-Centric: Model Mesh abstracts the operational intricacies, allowing developers to focus solely on the model protocol, without worrying about the underlying operational nuances. Simultaneously, it facilitates automation for Site Reliability Engineers (SREs) and Database Administrators (DBAs) in a declarative manner.
-* Cloud-Native Compatibility: Embracing an open community approach, Model Mesh facilitates the adoption of AI models from various vendors, promoting cloud-native architecture without vendor lock-in.
-
-The aspirations of Model Mesh include:
-* Reducing the developer burden, enabling a sharper focus on business enhancement.
-* Establishing a framework that encompasses model traffic, runtime resources, and reliability in a configurable, pluggable, and programmable manner.
-* Offering a standardized interface compatible with a variety of AI models, including heterogeneous models, cloud-native models, and distributed models.
-
-### Architecture
-![model-mesh-spec-v1](./static/model-mesh-spec-v1.png)
-
-## Specification
-
-Work on the following documents is currently in progress:
-
-|                               |         Latest Release             | 
-| :----------------------------: | :--------------------------------: |
-| Model Mesh |  [v0.1.0](/SPEC.md) |
-
-## Community
+* 多模型硬件共享
+* 分级算力供应
+* 模型私密性
+* 业务的融合
+* 云边算力协同
 
 
-| | |
-|:-|:-|
-| Mailing List| https://groups.google.com/g/model-mesh |
-| Dev Meetings (Starting Feb 16th, 2022), Bi-weekly Wednesday 9:00AM PST|https://meet.google.com/yhv-zrby-pyt |
-| Dev Meetings APAC Friendly (Starting April 27th, 2022), Bi-weekly APAC Wednesday 9:00PM GMT+8|https://meeting.tencent.com/dm/6UXDMNsHBVQO |
-| Wechat Broker|pisanix|
-| Slack |https://join.slack.com/t/modelmesh/shared_invite/zt-19rhvnxkz-USjZ~am~ghd_Q0q~8bAJXA |
-| Meetings Notes |https://bit.ly/39Fqt3x |
 
-## Support
+`Edgewize ModelMesh` 的架构图如下：
 
-Whether you are a user or contributor, feel free to open issues on GitHub:
+![`Edgewize ModelMesh` Intro](docs/static/modelmesh-intro.png)
 
-* [Issues](https://github.com/model-mesh/model-mesh/issues)
 
-## Community Code of Conduct
+## 架构
 
-Model Mesh adheres to the [CNCF Code of Conduct](https://github.com/cncf/foundation/blob/master/code-of-conduct.md).
+![`Edgewize ModelMesh` Arch](docs/static/modelmesh-arch.png)
+
+
+
+
+三个组件的功能分别为：
+
+* ***ModelMesh-Controller***: 用 Go 实现的控制面，提供对数据面组件的管控，如 Sidecar 注入、配置转换和下发，是 `Edgewize ModelMesh` 所有配置的入口。
+
+* ***ModelMesh-Proxy***: 用 Go 实现的高性能量代理，通过 MySQL 协议获取应用的推理服务访问流量，并基于此实现 SQL 流量治理、访问控制、防火墙、可观测性等各种治理能力。
+
+* ***ModelMesh-Broker***: 推理服务数据面，部署在集群中每个节点上并通过宿主机内核的各种能力提供可编程资源管理，如 TrafficQoS 等。
+
+### Broker
+![`Edgewize ModelMesh` Arch](docs/static/modelmesh-arch-broker.png)
+
+## 特性
+
+### 推理服务流量治理
+
+应用访问推理服务，`Edgewize ModelMesh` 可以劫持所有的流量。
+
+### 可观测性
+
+推理服务的监控指标通常从相关实例处获取，借助 `Edgewize ModelMesh` 可以透视多种推理服务访问指标。
+
+### 多模式
+
+`Edgewize ModelMesh` 支持多种方式访问，未来还会支持 `MQTT` 等方式。
+
+
+
+
+

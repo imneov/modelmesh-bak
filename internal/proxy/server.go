@@ -1,10 +1,9 @@
-package broker
+package proxy
 
 import (
 	"context"
 	"fmt"
-	v1 "github.com/imneov/modelmesh/api/modelfulx/v1alpha"
-	"github.com/imneov/modelmesh/internal/broker/config"
+	"github.com/imneov/modelmesh/internal/proxy/config"
 	proto "github.com/imneov/modelmesh/mindspore_serving/proto"
 	xgrpc "github.com/imneov/modelmesh/pkg/transport/grpc"
 	"github.com/imneov/modelmesh/pkg/utils"
@@ -16,31 +15,17 @@ import (
 )
 
 type Server struct {
-	Config        *config.Config
-	listener      net.Listener
-	Endpoint      *grpc.Server //Broker grpc server
-	ServingClient proto.MSServiceClient
-	queue         *QueuePool
-	dispatch      *Dispatch
-	scheduler     *Scheduler
-	done          <-chan struct{}
-	lock          sync.RWMutex
+	Config   *config.Config
+	listener net.Listener
+	Endpoint *grpc.Server //Broker grpc server
+	dispatch *Dispatch
+	done     <-chan struct{}
+	lock     sync.RWMutex
 }
 
 func (s *Server) PrepareRun(done <-chan struct{}) (err error) {
 	s.done = done
-	s.Endpoint = xgrpc.NewServer(s.Config.BrokerServer)
-
-	s.queue, err = NewQueuePool(s.Config.Queue, s.Config.ServiceGroups)
-	if err != nil {
-		return fmt.Errorf("queues is nil")
-	}
-
-	s.scheduler, err = NewScheduler(s.Config.Schedule)
-	if err != nil {
-		return err
-	}
-	s.scheduler.RegeneratePicker(s.Config.ServiceGroups)
+	s.Endpoint = xgrpc.NewServer(s.Config.ProxyServer)
 
 	s.dispatch, err = NewDispatch(s.Config.Dispatch)
 	if err != nil {
@@ -50,7 +35,7 @@ func (s *Server) PrepareRun(done <-chan struct{}) (err error) {
 	if s.Endpoint == nil {
 		return fmt.Errorf("broker server is nil")
 	}
-	v1.RegisterMFServiceServer(s.Endpoint, s)
+	proto.RegisterMSServiceServer(s.Endpoint, s)
 
 	return nil
 }
@@ -73,7 +58,7 @@ func (s *Server) Run(ctx context.Context) (err error) {
 		}
 	}()
 
-	addr := s.Config.BrokerServer.Addr
+	addr := s.Config.ProxyServer.Addr
 	klog.V(0).Infof("Start listening on %s", addr)
 
 	network, address := utils.ExtractNetAddress(addr)
@@ -88,9 +73,6 @@ func (s *Server) Run(ctx context.Context) (err error) {
 	var eg errgroup.Group
 	eg.Go(func() error {
 		return s.dispatch.Run(ctx)
-	})
-	eg.Go(func() error {
-		return s.Process(ctx)
 	})
 	eg.Go(func() error {
 		return s.Endpoint.Serve(s.listener)

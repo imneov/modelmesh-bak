@@ -1,27 +1,54 @@
 package broker
 
 import (
-	v1 "github.com/imneov/modelmesh/api/modelfulx/v1alpha"
-	"io"
+	"context"
+	"github.com/imneov/modelmesh/internal/broker/config"
+	errs "github.com/imneov/modelmesh/internal/broker/error"
 )
 
-type Queue struct {
+type QueueSelect func() (serviceGroup string, err error)
+
+type QueuePool struct {
+	queues map[string]*Queue
 }
 
-func (q Queue) Predict(stream v1.MFService_PredictServer) error {
-	for {
-		in, err := stream.Recv()
-		if err == io.EOF {
-			return nil
-		}
-		if err != nil {
-			return err
-		}
-		//@TODO
-		_ = in //// User Logic
-		if err := stream.Send(nil); err != nil {
-			return err
-		}
+type Queue struct {
+	ch chan *PredictRequest
+}
 
+func NewQueuePool(cfg *config.Queue, sc []*config.ServiceGroup) (*QueuePool, error) {
+	size := cfg.Size
+	qp := &QueuePool{
+		queues: map[string]*Queue{},
+	}
+	for _, group := range sc {
+		qp.queues[group.Name] = &Queue{ch: make(chan *PredictRequest, size)}
+	}
+	return qp, nil
+}
+
+func NewQueue(cfg *config.Queue) (*Queue, error) {
+	size := cfg.Size
+	return &Queue{ch: make(chan *PredictRequest, size)}, nil
+}
+
+func (qp *QueuePool) Select(serviceGroup string) (queue *Queue, err error) {
+	queue, ok := qp.queues[serviceGroup]
+	if !ok {
+		return nil, errs.ErrQueueGroupIsNotExist
+	}
+	return queue, nil
+}
+
+func (q *Queue) Push(ctx context.Context, in *PredictRequest) {
+	q.ch <- in
+}
+
+func (q *Queue) Pop(ctx context.Context) *PredictRequest {
+	select {
+	case pr := <-q.ch:
+		return pr
+	default:
+		return nil
 	}
 }

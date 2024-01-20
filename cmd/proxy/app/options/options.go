@@ -18,8 +18,8 @@ package options
 
 import (
 	"flag"
-	"github.com/imneov/modelmesh/internal/broker"
-	"github.com/imneov/modelmesh/internal/broker/config"
+	"github.com/imneov/modelmesh/internal/proxy"
+	"github.com/imneov/modelmesh/internal/proxy/config"
 	"k8s.io/klog/v2"
 	"strings"
 
@@ -59,9 +59,9 @@ func (s *ServerRunOptions) Flags() (fss cliflag.NamedFlagSets) {
 // const fakeInterface string = "FAKE"
 
 // NewServer creates an BrokerServer instance using given options
-func (s *ServerRunOptions) NewServer(stopCh <-chan struct{}) (*broker.Server, error) {
-	brokerServer := &broker.Server{
+func (s *ServerRunOptions) NewServer(stopCh <-chan struct{}) (*proxy.Server, error) {
+	proxyServer := &proxy.Server{
 		Config: s.Config,
 	}
-	return brokerServer, nil
+	return proxyServer, nil
 }

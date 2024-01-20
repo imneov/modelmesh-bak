@@ -1,26 +1,25 @@
 package picker
 
 import (
+	errs "github.com/imneov/modelmesh/internal/broker/error"
 	"github.com/imneov/modelmesh/internal/broker/picker/priorityqueue"
 	"math/rand"
 	"sync"
-
-	"google.golang.org/grpc/balancer"
 )
 
 type McPickerBuilder struct {
 }
 
 func (pb *McPickerBuilder) Build(info PickerBuildInfo) Picker {
-	if len(info.ReadySCs) == 0 {
-		return NewErrPicker(balancer.ErrNoSubConnAvailable)
+	if len(info.Resources) == 0 {
+		return NewErrPicker(errs.ErrNoSubConnAvailable)
 	}
 	scs := []PickerKey{}
 	//scToAddr := make(map[PickerKey]resolver.Address)
 	scConnectNum := priorityqueue.NewPriorityQueue()
 	i := 0
-	//for sc, scInfo := range info.ReadySCs {
-	for sc, _ := range info.ReadySCs {
+	//for sc, scInfo := range info.Resources {
+	for sc := range info.Resources {
 		scs = append(scs, sc)
 		//scToAddr[sc] = scInfo.Address
 		scConnectNum.PushItem(&priorityqueue.Item{
@@ -36,7 +35,7 @@ func (pb *McPickerBuilder) Build(info PickerBuildInfo) Picker {
 		//scToAddr:     scToAddr,
 		scConnectNum: scConnectNum,
 		// Start at a random index, as the same RR balancer rebuilds a new
-		// picker when SubConn states change, and we don't want to apply excess
+		// picker when Resource states change, and we don't want to apply excess
 		// load to the first server in the list.
 		next: rand.Intn(len(scs)),
 	}
@@ -45,7 +44,7 @@ func (pb *McPickerBuilder) Build(info PickerBuildInfo) Picker {
 type mcPicker struct {
 	// subConns is the snapshot of the roundrobin balancer when this picker was
 	// created. The slice is immutable. Each Get() will do a round robin
-	// selection from it and return the selected SubConn.
+	// selection from it and return the selected Resource.
 	subConns []PickerKey
 
 	//scToAddr map[PickerKey]resolver.Address
@@ -57,12 +56,12 @@ type mcPicker struct {
 	next int
 }
 
-func (p *mcPicker) Pick(opts balancer.PickInfo) (balancer.PickResult, error) {
+func (p *mcPicker) Pick(opts PickInfo) (PickResult, error) {
 	p.mu.Lock()
 	n := len(p.subConns)
 	p.mu.Unlock()
 	if n == 0 {
-		return balancer.PickResult{}, balancer.ErrNoSubConnAvailable
+		return PickResult{}, errs.ErrNoSubConnAvailable
 	}
 
 	p.mu.Lock()
@@ -74,7 +73,7 @@ func (p *mcPicker) Pick(opts balancer.PickInfo) (balancer.PickResult, error) {
 	p.scConnectNum.UpdateItem(item)
 	p.mu.Unlock()
 
-	done := func(info balancer.DoneInfo) {
+	done := func(info DoneInfo) {
 		p.mu.Lock()
 		item.Val--
 		p.scConnectNum.UpdateItem(item)
@@ -82,5 +81,5 @@ func (p *mcPicker) Pick(opts balancer.PickInfo) (balancer.PickResult, error) {
 		//log.Println("mcpicker done", picked.Addr, p.next)
 	}
 
-	return balancer.PickResult{SubConn: sc, Done: done}, nil
+	return PickResult{Resource: sc, Done: done}, nil
 }

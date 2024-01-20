@@ -1,33 +1,31 @@
 package picker
 
 import (
+	errs "github.com/imneov/modelmesh/internal/broker/error"
 	"math/rand"
 	"sync"
 	"time"
-
-	"google.golang.org/grpc/balancer"
 )
 
 type RWRRPickerBuilder struct{}
 
 func (pb *RWRRPickerBuilder) Build(info PickerBuildInfo) Picker {
-	if len(info.ReadySCs) == 0 {
-		return NewErrPicker(balancer.ErrNoSubConnAvailable)
+	if len(info.Resources) == 0 {
+		return NewErrPicker(errs.ErrNoSubConnAvailable)
 	}
 
 	scs := []PickerKey{}
 	//scToAddr := make(map[PickerKey]resolver.Address)
 	rwrr := newRwrr()
 	var weight int32
-	for sc, scInfo := range info.ReadySCs {
+	for sc, scInfo := range info.Resources {
 		scs = append(scs, sc)
 		//scToAddr[sc] = scInfo.Address
 		weight = 1
-		//if scInfo.Address.Attributes != nil {
-		//	val := scInfo.Address.Attributes.Value(WeightAttributeKey)
-		//	weight = val.(int32)
-		//}
-		weight = scInfo.Address.Weight
+		if scInfo.Attributes != nil {
+			val := scInfo.Attributes.Value(WeightAttributeKey)
+			weight = val.(int32)
+		}
 		rwrr.add(weight)
 	}
 
@@ -35,7 +33,7 @@ func (pb *RWRRPickerBuilder) Build(info PickerBuildInfo) Picker {
 		subConns: scs,
 		//scToAddr: scToAddr,
 		// Start at a random index, as the same WRR balancer rebuilds a new
-		// picker when SubConn states change, and we don't want to apply excess
+		// picker when Resource states change, and we don't want to apply excess
 		// load to the first server in the list.
 		next: rwrr.next(),
 		rwrr: rwrr,
@@ -45,7 +43,7 @@ func (pb *RWRRPickerBuilder) Build(info PickerBuildInfo) Picker {
 type rwrrPicker struct {
 	// subConns is the snapshot of the weightedroundrobin balancer when this picker was
 	// created. The slice is immutable. Each Get() will do a round robin
-	// selection from it and return the selected SubConn.
+	// selection from it and return the selected Resource.
 	subConns []PickerKey
 
 	//scToAddr map[PickerKey]resolver.Address
@@ -56,19 +54,19 @@ type rwrrPicker struct {
 	next int
 }
 
-func (p *rwrrPicker) Pick(opts balancer.PickInfo) (balancer.PickResult, error) {
+func (p *rwrrPicker) Pick(opts PickInfo) (PickResult, error) {
 	p.mu.Lock()
 	n := len(p.subConns)
 	p.mu.Unlock()
 	if n == 0 {
-		return balancer.PickResult{}, balancer.ErrNoSubConnAvailable
+		return PickResult{}, errs.ErrNoSubConnAvailable
 	}
 
 	p.mu.Lock()
 	sc := p.subConns[p.next]
 	p.next = p.rwrr.next()
 	p.mu.Unlock()
-	return balancer.PickResult{SubConn: sc}, nil
+	return PickResult{Resource: sc}, nil
 }
 
 type rwrr struct {

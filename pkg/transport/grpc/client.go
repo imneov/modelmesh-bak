@@ -18,31 +18,53 @@ package grpc
 
 import (
 	"context"
+	"fmt"
 	grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
+	v1 "github.com/imneov/modelmesh/api/modelfulx/v1alpha"
 	"github.com/imneov/modelmesh/internal/broker/config"
 	proto "github.com/imneov/modelmesh/mindspore_serving/proto"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"k8s.io/klog/v2"
 	"time"
 )
 
-var opts = []grpc.DialOption{
-	grpc.WithDefaultServiceConfig(`{"loadBalancingPolicy":"round_robin"}`),
-	grpc.WithInsecure(),
-	grpc.WithUnaryInterceptor(
-		grpc_opentracing.UnaryClientInterceptor(),
-	),
-	//grpc.WithTimeout(timeout),
-	grpc.WithBackoffMaxDelay(time.Second * 3),
-	grpc.WithInitialWindowSize(1 << 30),
-	grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(64 * 1024 * 1024)),
+func clientOption(conf *config.GRPCClient) []grpc.DialOption {
+	return []grpc.DialOption{
+		grpc.WithBlock(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(
+			grpc_opentracing.UnaryClientInterceptor(),
+		),
+		//grpc.WithTimeout(timeout),
+		//grpc.WithConnectParams(grpc.ConnectParams{
+		//	Backoff: backoff.Config{
+		//		MaxDelay: time.Second * 3,
+		//	},
+		//}),
+		grpc.WithInitialWindowSize(1 << 30),
+		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(64 * 1024 * 1024)),
+	}
 }
 
 func NewServingClient(conf *config.GRPCClient) proto.MSServiceClient {
-	ctx, _ := context.WithTimeout(context.Background(), time.Duration(conf.Timeout))
-	conn, err := grpc.DialContext(ctx, conf.Addr, opts...)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+	defer cancel()
+	conn, err := grpc.DialContext(ctx, conf.Addr, clientOption(conf)...)
 	if err != nil {
-		klog.Errorf("connect fail, endpoint: %s, err %w", "endpoint", conf.Addr, err)
+		err = fmt.Errorf("connect fail, endpoint: %s, err %w", conf.Addr, err)
+		klog.Error(err)
 	}
 	return proto.NewMSServiceClient(conn)
+}
+
+func NewBrokerClient(conf *config.GRPCClient) v1.MFServiceClient {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+	defer cancel()
+	conn, err := grpc.DialContext(ctx, conf.Addr, clientOption(conf)...)
+	if err != nil {
+		err = fmt.Errorf("connect fail, endpoint: %s, err %w", conf.Addr, err)
+		klog.Error(err)
+	}
+	return v1.NewMFServiceClient(conn)
 }

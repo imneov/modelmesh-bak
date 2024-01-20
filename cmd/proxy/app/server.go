@@ -19,8 +19,8 @@ package app
 import (
 	"context"
 	"fmt"
-	"github.com/imneov/modelmesh/cmd/broker/app/options"
-	"github.com/imneov/modelmesh/internal/broker/config"
+	"github.com/imneov/modelmesh/cmd/proxy/app/options"
+	"github.com/imneov/modelmesh/internal/proxy/config"
 	"gopkg.in/yaml.v2"
 	"k8s.io/klog/v2"
 

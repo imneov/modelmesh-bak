@@ -25,8 +25,8 @@ require (
 )
 
 require (
+	github.com/coreos/etcd v3.3.13+incompatible
 	github.com/database-mesh/golang-sdk v0.0.0-20230719103615-a3cc1537545c
-	github.com/database-mesh/pisanix/pisa-controller v0.0.0-20230302083929-03b0f71991f6
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-kit/kit v0.9.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.0.1-0.20190118093823-f849b5445de4
@@ -34,7 +34,7 @@ require (
 	github.com/mwitkow/go-proto-validators v0.3.2
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.8.1
-	github.com/tkeel-io/kit v0.0.0-20220522082406-248e4772e711
+	golang.org/x/sync v0.1.0
 	google.golang.org/grpc v1.56.3
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/component-base v0.26.4
@@ -47,6 +47,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
@@ -80,9 +81,8 @@ require (
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go v1.1.4 // indirect
-	go.uber.org/atomic v1.11.0 // indirect
-	go.uber.org/goleak v1.2.0 // indirect
-	go.uber.org/multierr v1.11.0 // indirect
+	go.uber.org/atomic v1.7.0 // indirect
+	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.24.0 // indirect
 	golang.org/x/arch v0.3.0 // indirect
 	golang.org/x/crypto v0.14.0 // indirect

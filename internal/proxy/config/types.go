@@ -18,10 +18,7 @@ type ServiceGroup = xconfig.ServiceGroup
 
 // Config defines everything needed for apiserver to deal with external services
 type Config struct {
-	BaseOptions   *BaseConfig     `yaml:"base" json:"baseOptions,omitempty"`
-	BrokerServer  *GRPCServer     `yaml:"brokerServer" json:"brokerServer,omitempty"`
-	Schedule      *Schedule       `yaml:"schedule" json:"schedule,omitempty"`
-	Queue         *Queue          `yaml:"queue" json:"queue,omitempty"`
-	Dispatch      *Dispatch       `yaml:"dispatch" json:"dispatch,omitempty"`
-	ServiceGroups []*ServiceGroup `yaml:"serviceGroups" json:"serviceGroups,omitempty"`
+	BaseOptions *BaseConfig `yaml:"base" json:"base,omitempty"`
+	ProxyServer *GRPCServer `yaml:"proxyServer" json:"proxyServer,omitempty"`
+	Dispatch    *Dispatch   `yaml:"dispatch" json:"dispatch,omitempty"`
 }

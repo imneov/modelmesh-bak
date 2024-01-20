@@ -7,7 +7,6 @@ import (
 	fmt "fmt"
 	proto "github.com/gogo/protobuf/proto"
 	_ "github.com/imneov/modelmesh/mindspore_serving/proto"
-	github_com_mwitkow_go_proto_validators "github.com/mwitkow/go-proto-validators"
 	math "math"
 )
 
@@ -17,18 +16,8 @@ var _ = fmt.Errorf
 var _ = math.Inf
 
 func (this *PredictRequest) Validate() error {
-	if this.Mindspore != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Mindspore); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("Mindspore", err)
-		}
-	}
 	return nil
 }
 func (this *PredictReply) Validate() error {
-	if this.Mindspore != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Mindspore); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("Mindspore", err)
-		}
-	}
 	return nil
 }
