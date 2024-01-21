@@ -39,6 +39,3 @@ bin/
 .vscode/
 .idea/
 *.swp
-
-
-tests/

@@ -3,12 +3,12 @@ base:
   loglevel: info
   profenable: false
   tracerenable: false
-  whitelist: [ ]
-  endpoints: [ ]
+  whitelist: []
+  endpoints: []
   baseconfig: ""
-brokerServer:
-  addr: :8010
-  timeout: 3s
+proxyServer:
+  addr: 127.0.0.1:8080
+  timeout: 1s
   idletimeout: 1m0s
   maxlifetime: 2h0m0s
   forceclosewait: 20s
@@ -17,20 +17,11 @@ brokerServer:
   maxmessagesize: 1048576
   maxconcurrentstreams: 1024
   enableopentracing: false
-schedule:
-  method: RR
-queue:
-  size: 10
 dispatch:
   queue:
     size: 10
   client:
-    addr: 127.0.0.1:5500
+    addr: 127.0.0.1:8010
     timeout: 5s
-serviceGroups:
-  - name: default
-    weight: 100
-  - name: pay
-    weight: 200
-  - name: security
-    weight: 300
+serviceGroup:
+  name: abc001
