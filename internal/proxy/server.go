@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/imneov/modelmesh/internal/proxy/config"
+	"github.com/imneov/modelmesh/internal/proxy/holder"
 	proto "github.com/imneov/modelmesh/mindspore_serving/proto"
 	xgrpc "github.com/imneov/modelmesh/pkg/transport/grpc"
 	"github.com/imneov/modelmesh/pkg/utils"
@@ -19,6 +20,7 @@ type Server struct {
 	listener net.Listener
 	Endpoint *grpc.Server //Broker grpc server
 	dispatch *Dispatch
+	holder   holder.Holder
 	done     <-chan struct{}
 	lock     sync.RWMutex
 }
@@ -27,7 +29,12 @@ func (s *Server) PrepareRun(done <-chan struct{}) (err error) {
 	s.done = done
 	s.Endpoint = xgrpc.NewServer(s.Config.ProxyServer)
 
-	s.dispatch, err = NewDispatch(s.Config.Dispatch)
+	if s.holder != nil {
+		s.holder.Cancel()
+	}
+	s.holder = holder.New(context.Background())
+
+	s.dispatch, err = NewDispatch(s.Config.Dispatch, s.holder)
 	if err != nil {
 		return err
 	}

@@ -2,35 +2,32 @@ package holder
 
 import (
 	"context"
-	"k8s.io/klog/v2"
+	"github.com/imneov/modelmesh/pkg/utils"
+	"reflect"
+	"testing"
 	"time"
 )
 
-func ExampleHolder() {
-	ctx, _ := context.WithTimeout(context.Background(), 50*time.Second)
-	holder := New(ctx, 10)
+func Test_holder_Wait(t *testing.T) {
+	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+	holder := New(ctx)
 
-	w := holder.Wait(ctx, "requestID-test")
+	reqID := utils.ReqUUID()
 
+	// Mock a response
 	go func() {
-		time.Sleep(5 * time.Second)
-		holder.OnRespond(&Response{
-			ID:     "requestID-test",
+		time.Sleep(3 * time.Second)
+		holder.Notify(&Response{
+			ID:     reqID,
 			Status: StatusOK,
 		})
 	}()
-	for {
-		klog.V(0).Info("wait")
-		resp := w.Wait()
-		reqID := resp.ID
-		//if resp.Status != StatusOK {
-		//	klog.Fatal("resp status is not ok", "resp", resp, "reqID", reqID)
-		//}
 
-		klog.V(0).Info("resp status is ok", "resp", resp, "reqID", reqID)
-		time.Sleep(1 * time.Second)
+	t.Logf("wait reqID: %s", reqID)
+	ret := holder.Wait(ctx, reqID)
+	t.Logf("wait reqID: %s, ret: %v", reqID, ret)
+
+	if !reflect.DeepEqual(ret.ID, reqID) {
+		t.Errorf("ret ID = %v, reqID = %v", ret.ID, reqID)
 	}
-
-	// Output:
-	//
 }

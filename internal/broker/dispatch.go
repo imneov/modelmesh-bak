@@ -38,7 +38,7 @@ func (d *Dispatch) Run(ctx context.Context) error {
 		if ret == nil {
 			continue
 		}
-		err := ret.Send(&v1.PredictReply{Id: fmt.Sprintf("broker-%s", ret.Request.Id)})
+		err := ret.Send(&v1.PredictReply{Id: ret.Request.Id})
 		klog.V(0).Infof("Send %v,%v", ret, err)
 		select {
 		case <-ctx.Done():

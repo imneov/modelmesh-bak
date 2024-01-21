@@ -16,7 +16,7 @@ func NewMSServiceService(client pb.MSServiceClient) *MSServiceService {
 
 func (s *MSServiceService) Predict(ctx context.Context, req *pb.PredictRequest) (*pb.PredictReply, error) {
 	//ret, nil := s.client.Predict(ctx, req)
-	//klog.V(7).Infof("Predict request: %v, %v", req, ret)
-	klog.V(7).Infof("Predict request: %v", req)
+	//klog.V(0).Infof("Predict request: %v, %v", req, ret)
+	klog.V(0).Infof("Predict request: %v", req)
 	return &pb.PredictReply{}, nil
 }

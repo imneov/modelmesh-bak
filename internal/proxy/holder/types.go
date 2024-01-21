@@ -13,8 +13,8 @@ var (
 
 type Holder interface {
 	Cancel()
-	Wait(ctx context.Context, id string) *Waiter
-	OnRespond(*Response)
+	Wait(ctx context.Context, id string) Response
+	Notify(*Response)
 }
 
 type Response struct {

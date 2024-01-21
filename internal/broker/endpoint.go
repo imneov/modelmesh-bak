@@ -19,7 +19,7 @@ type PredictRequest struct {
 }
 
 func (s *Server) Predict(stream v1.MFService_PredictServer) error {
-	klog.V(7).Infof("--- Predict ---")
+	klog.V(0).Infof("--- Predict ---")
 	//// Create trailer in defer to record function return time.
 	//defer func() {
 	//	trailer := metadata.Pairs("timestamp", time.Now().Format(timestampFormat))

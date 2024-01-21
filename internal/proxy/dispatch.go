@@ -5,25 +5,29 @@ import (
 	"fmt"
 	v1 "github.com/imneov/modelmesh/api/modelfulx/v1alpha"
 	"github.com/imneov/modelmesh/internal/proxy/config"
+	"github.com/imneov/modelmesh/internal/proxy/holder"
 	xgrpc "github.com/imneov/modelmesh/pkg/transport/grpc"
 	"io"
 	"k8s.io/klog/v2"
-	"time"
 )
 
 type Dispatch struct {
 	queue  *Queue
 	client v1.MFServiceClient
+	holder holder.Holder
 }
 
-func NewDispatch(cfg *config.Dispatch) (*Dispatch, error) {
+func NewDispatch(cfg *config.Dispatch, holder holder.Holder) (*Dispatch, error) {
 	client := xgrpc.NewBrokerClient(cfg.Client)
 	if client == nil {
 		return nil, fmt.Errorf("client is nil")
 	}
+	queue, err := NewQueue(cfg.Queue)
 	return &Dispatch{
 		client: client,
-	}, nil
+		holder: holder,
+		queue:  queue,
+	}, err
 }
 
 func (d *Dispatch) Run(ctx context.Context) error {
@@ -32,37 +36,54 @@ func (d *Dispatch) Run(ctx context.Context) error {
 		return err
 	}
 
-	waitc := make(chan struct{})
+	closeCh := make(chan struct{})
 	go func() {
 		idx := 0
 		for {
 			in, err := stream.Recv()
 			if err == io.EOF {
 				// read done.
-				close(waitc)
+				close(closeCh)
 				return
 			}
 			if err != nil {
 				klog.V(0).Infof("Failed to receive a note : %v", err)
 			}
+
+			d.holder.Notify(&holder.Response{
+				ID:     in.Id,
+				Status: holder.StatusOK,
+			})
 			klog.V(0).Infof("Got message [%d]%v:%v", idx, &in, in.Id)
 			idx++
 		}
 	}()
-	idx := 0
+
 	for {
-		time.Sleep(1 * time.Millisecond)
+		ret := d.queue.Pop(ctx)
+		if ret == nil {
+			continue
+		}
+
 		in := &v1.PredictRequest{
-			Id: fmt.Sprintf("test-%d", idx),
+			Id: ret.Id,
 			//Mindspore: new(proto.PredictRequest),
 		}
-		if err := stream.Send(in); err != nil {
-			klog.V(0).Infof("Failed to send a note: %v", err)
+		err := stream.Send(in)
+		klog.V(0).Infof("Send %v,%v", ret, err)
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-closeCh:
+			return nil
+		default:
 		}
-		klog.V(0).Infof("Send message [%d]%v:%v", idx, &in, in.Id)
-		idx++
 	}
+
 	stream.CloseSend()
-	<-waitc
 	return nil
+}
+
+func (d *Dispatch) Wait(ctx context.Context, id string) holder.Response {
+	return d.holder.Wait(ctx, id)
 }

@@ -4,52 +4,49 @@ import (
 	"context"
 	"k8s.io/klog/v2"
 	"sync"
-	"time"
 )
 
 type holder struct {
-	timeout time.Duration
-	holdeds map[string]chan Response
-
-	lock   sync.RWMutex
-	ctx    context.Context
-	cancel context.CancelFunc
+	lock    sync.RWMutex
+	holders map[string]chan Response
 }
 
-func New(ctx context.Context, timeout time.Duration) Holder {
-	ctx, cancel := context.WithCancel(ctx)
+func New(ctx context.Context) Holder {
 	return &holder{
-		ctx:     ctx,
-		cancel:  cancel,
 		lock:    sync.RWMutex{},
-		timeout: timeout,
-		holdeds: make(map[string]chan Response),
+		holders: make(map[string]chan Response),
 	}
 }
 
+// Cancel cancel all waiters.
 func (h *holder) Cancel() {
-
+	h.lock.Lock()
+	for _, ch := range h.holders {
+		ch <- Response{
+			Status:  StatusCanceled,
+			ErrCode: "canceled",
+		}
+	}
+	h.lock.Unlock()
 }
 
-func (h *holder) Wait(ctx context.Context, id string) *Waiter {
+func (h *holder) Wait(ctx context.Context, id string) Response {
+	w := h.wait(ctx, id)
+	resp := <-w.ch
+	return resp
+}
+
+func (h *holder) wait(ctx context.Context, id string) *Waiter {
 	h.lock.Lock()
 	// chan size 为3 避免response和超时对chan的竞争.
 	waitCh := make(chan Response, 2)
-	h.holdeds[id] = waitCh
+	h.holders[id] = waitCh
 	h.lock.Unlock()
-
-	ctx, cancel := context.WithTimeout(ctx, h.timeout)
 
 	go func() {
 		select {
-		case <-h.ctx.Done():
-			klog.V(0).Infof("h.ctx.Done()")
-			waitCh <- Response{
-				Status:  StatusCanceled,
-				ErrCode: context.Canceled.Error(),
-			}
 		case <-ctx.Done():
-			klog.V(0).Infof("ctx.Done()")
+			klog.V(0).Infof("receive context done, id: %s", id)
 			if nil != ctx.Err() {
 				waitCh <- Response{
 					Status:  StatusCanceled,
@@ -60,26 +57,25 @@ func (h *holder) Wait(ctx context.Context, id string) *Waiter {
 
 		// delete wait channel.
 		h.lock.Lock()
-		delete(h.holdeds, id)
+		delete(h.holders, id)
 		h.lock.Unlock()
 	}()
 
 	return &Waiter{
-		ch:     waitCh,
-		cancel: cancel,
+		ch: waitCh,
 	}
 }
 
-func (h *holder) OnRespond(resp *Response) {
+func (h *holder) Notify(resp *Response) {
+	klog.V(0).InfoS("received response", "respID", resp.ID, "status", resp.Status)
+
 	h.lock.Lock()
-	waitCh := h.holdeds[resp.ID]
-	delete(h.holdeds, resp.ID)
+	waitCh := h.holders[resp.ID]
+	delete(h.holders, resp.ID)
 	h.lock.Unlock()
 
-	klog.V(7).Info("received response", "respID", resp.ID, "status", resp.Status)
-
 	if nil == waitCh {
-		klog.V(7).Info("request terminated, user cancel or timeout", resp.ID, "status")
+		klog.Warningf("holders request %s is not exists", resp.ID)
 		return
 	}
 
