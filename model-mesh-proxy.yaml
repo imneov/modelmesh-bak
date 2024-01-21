@@ -23,3 +23,5 @@ dispatch:
   client:
     addr: 127.0.0.1:8010
     timeout: 5s
+serviceGroup:
+  name: abc001

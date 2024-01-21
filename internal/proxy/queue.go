@@ -2,13 +2,13 @@ package proxy
 
 import (
 	"context"
+	v1 "github.com/imneov/modelmesh/api/modelfulx/v1alpha"
 	"github.com/imneov/modelmesh/internal/broker/config"
 )
 
 type QueueSelect func() (serviceGroup string, err error)
 
-type PredictRequest struct {
-}
+type PredictRequest = v1.PredictRequest
 
 type Queue struct {
 	ch chan *PredictRequest

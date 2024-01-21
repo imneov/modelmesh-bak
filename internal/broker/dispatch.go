@@ -28,10 +28,10 @@ func NewDispatch(cfg *config.Dispatch) (*Dispatch, error) {
 }
 
 // Run dispatch request to serving server
+// @TODO call serving server
 // 1. pull Request from queues
 // 2. call serving server
 // 3. call stream send response
-// @TODO add retry
 func (d *Dispatch) Run(ctx context.Context) error {
 	for {
 		ret := d.queue.Pop(ctx)
